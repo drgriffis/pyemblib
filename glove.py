@@ -8,7 +8,7 @@ class GloveMode:
     SumContexts = 1
     GetContexts = 2
 
-def read(fname, vocab=None, mode=GloveMode.SumContexts, include_bias=False):
+def read(fname, vocab=None, mode=GloveMode.SumContexts, include_bias=False, size_only=True):
     if not vocab:
         raise Exception("vocab must be specified for GloVe embeddings")
 
@@ -29,6 +29,9 @@ def read(fname, vocab=None, mode=GloveMode.SumContexts, include_bias=False):
     real_size = 8  # default double precision
     file_size = getFileSize(inf)
     dim = int((float(file_size) / (real_size * len(words))) / 2)
+
+    if size_only:
+        return (len(words), dim)
 
     # extract the stored vectors
     for i in range(len(words)):

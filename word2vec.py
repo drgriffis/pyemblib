@@ -20,7 +20,7 @@ def _readTxt(fname, size_only=False):
     # get summary info about vectors file
     (numWords, dim) = (int(s.strip()) for s in hook.readline().split())
     if size_only:
-        return dim
+        return (numWords, dim)
 
     for line in hook:
         chunks = line.split()
@@ -55,7 +55,7 @@ def _readBin(fname, size_only=False):
     else: float_size = 4
 
     if size_only:
-        return dim
+        return (numWords, dim)
 
     # make best guess about byte size of floats in file
     #float_size = 4
