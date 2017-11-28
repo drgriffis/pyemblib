@@ -11,18 +11,23 @@ from . import word2vec
 from . import glove
 from .glove import GloveMode
 
-def read(fname, format=Format.Word2Vec, **kwargs):
+def read(fname, format=Format.Word2Vec, size_only=False, **kwargs):
     '''Returns array of words and word embedding matrix
     '''
     if format == Format.Word2Vec:
-        (words, vectors) = word2vec.read(fname, **kwargs)
+        output = word2vec.read(fname, size_only=size_only, **kwargs)
     elif format == Format.Glove:
-        (words, vectors) = glove.read(fname, **kwargs)
+        output = glove.read(fname, size_only=size_only, **kwargs)
 
-    wordmap = Embeddings()
-    for i in range(len(words)):
-        wordmap[words[i]] = vectors[i]
-    return wordmap
+    if size_only:
+        return output
+    else:
+        (words, vectors) = output
+
+        wordmap = Embeddings()
+        for i in range(len(words)):
+            wordmap[words[i]] = vectors[i]
+        return wordmap
 
 class Embeddings(dict):
     @property

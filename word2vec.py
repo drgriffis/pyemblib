@@ -4,14 +4,14 @@ import sys
 import numpy as np
 from .common import *
 
-def read(fname, mode=Mode.Binary):
+def read(fname, mode=Mode.Binary, size_only=False):
     '''Returns array of words and word embedding matrix
     '''
-    if mode == Mode.Text: (words, vectors) = _readTxt(fname)
-    elif mode == Mode.Binary: (words, vectors) = _readBin(fname)
-    return (words, vectors)
+    if mode == Mode.Text: output = _readTxt(fname, size_only=size_only)
+    elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only)
+    return output
 
-def _readTxt(fname):
+def _readTxt(fname, size_only=False):
     '''Returns array of words and word embedding matrix
     '''
     words, vectors = [], []
@@ -19,6 +19,8 @@ def _readTxt(fname):
 
     # get summary info about vectors file
     (numWords, dim) = (int(s.strip()) for s in hook.readline().split())
+    if size_only:
+        return dim
 
     for line in hook:
         chunks = line.split()
@@ -39,7 +41,7 @@ def _getFileSize(inf):
     inf.seek(curIx)
     return file_size
 
-def _readBin(fname):
+def _readBin(fname, size_only=False):
     import sys
     words, vectors = [], []
 
@@ -51,6 +53,9 @@ def _readBin(fname):
     (numWords, dim) = summary_chunks[:2]
     if len(summary_chunks) > 2: float_size = 8
     else: float_size = 4
+
+    if size_only:
+        return dim
 
     # make best guess about byte size of floats in file
     #float_size = 4
