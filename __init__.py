@@ -43,6 +43,9 @@ class Embeddings(dict):
     @property
     def shape(self):
         return (len(self), self.size)
+
+    def has(self, key):
+        return not self.get(key, None) is None
     
 
 def load(*args, **kwargs):
