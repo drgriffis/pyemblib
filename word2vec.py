@@ -90,7 +90,7 @@ def _readBin(fname, size_only=False):
     return (words, vectors)
 
 def write(embeds, fname, mode=Mode.Binary, verbose=False):
-    '''Writes a dictionary of embeddings { term : embed}
+    '''Writes a dictionary of embeddings { term : embed }
     to a file, in the format specified.
     '''
     if mode == Mode.Binary:
@@ -118,17 +118,18 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
         embedding = wordmap.get(word)
         if mode == Mode.Binary:
             outf.write(b' ')
+            # write as 4-byte float 32
             if 'astype' in dir(embedding): embedding.astype('f').tofile(outf)
-            else: embedding.tofile(outf)
+            else: np.float32(embedding).tofile(outf)
         elif mode == Mode.Text:
             for f in embedding: write_str(' %.8f' % f)
         write_str('\n')
         if verbose: 
-            sys.stdout.write('\r >>> Written %d/%d words' % (i,len(keys)))
-            if i % 50 == 0: sys.stdout.flush()
+            if i % 50 == 0: sys.stdout.write('\r >>> Written %d/%d words' % (i,len(keys)))
+            if i % 200 == 0: sys.stdout.flush()
         i += 1
     outf.close()
 
     if verbose:
-        sys.stdout.write('\n')
+        sys.stdout.write('\r >>> Written %d/%d words\n' % (i, len(keys)))
         sys.stdout.flush()
