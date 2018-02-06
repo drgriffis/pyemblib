@@ -17,7 +17,7 @@ if __name__=='__main__':
             exit()
         return args[0], options.dim_only
     embf, dim_only = _cli()
-    (nwords, dim) = read(embf, size_only=True)
+    (nwords, dim) = getSize(embf)
     if dim_only:
         sys.stdout.write('%d\n' % dim)
     else:

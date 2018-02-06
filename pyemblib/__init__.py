@@ -10,6 +10,29 @@ from . import word2vec
 from . import glove
 from .glove import GloveMode
 
+
+class Embeddings(dict):
+    '''Wrapper for word embeddings; inherits from Dictionary.
+    Keys are words, values are embedding arrays.
+    '''
+    @property
+    def size(self):
+        if not hasattr(self, '_size'):
+            for any_vector in self.values():
+                break
+            self._size = len(any_vector)
+        return self._size
+    @property
+    def dimension(self):
+        return self.size
+    @property
+    def shape(self):
+        return (len(self), self.size)
+
+    def has(self, key):
+        return not self.get(key, None) is None
+
+
 def read(fname, format=Format.Word2Vec, size_only=False, **kwargs):
     '''Returns array of words and word embedding matrix
     '''
@@ -27,29 +50,15 @@ def read(fname, format=Format.Word2Vec, size_only=False, **kwargs):
         for i in range(len(words)):
             wordmap[words[i]] = vectors[i]
         return wordmap
-
-class Embeddings(dict):
-    @property
-    def size(self):
-        if not hasattr(self, '_size'):
-            for any_vector in self.values():
-                break
-            self._size = len(any_vector)
-        return self._size
-    @property
-    def dimension(self):
-        return self.size
-    @property
-    def shape(self):
-        return (len(self), self.size)
-
-    def has(self, key):
-        return not self.get(key, None) is None
     
-
 def load(*args, **kwargs):
     '''Alias for read'''
     return read(*args, **kwargs)
+
+def getSize(fname, format=Format.Word2Vec, **kwargs):
+    '''Gets (vocab size, # of dimensions) for an embedding file
+    '''
+    return read(fname, size_only=True, format=format, **kwargs)
 
 def write(embeds, fname, format=Format.Word2Vec, **kwargs):
     '''Writes a dictionary of embeddings { term : embed}
@@ -114,7 +123,7 @@ def splitVocabAndEmbeddings(embeds):
     vocab = tuple(embeds.keys())
     embed_array = []
     for v in vocab: embed_array.append(embeds[v])
-    return (vocab, embed_array)
+    return (vocab, np.array(embed_array))
 
 
 class NearestNeighbors:
