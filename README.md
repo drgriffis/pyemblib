@@ -51,4 +51,4 @@ pyemblib.write(embs, '/tmp/bin_embeddings.bin', mode=pyemblib.Mode.Binary)
 ```
 
 ## Feedback
-Please report any issues you encounter to the (Github Issues page)[https://github.com/drgriffis/pyemblib/issues]!
+Please report any issues you encounter to the [Github Issues page](https://github.com/drgriffis/pyemblib/issues)!
