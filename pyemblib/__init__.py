@@ -4,7 +4,6 @@ Library for reading word vector files (text or binary)
 '''
 import numpy
 import codecs
-from drgriffis.common.logging import log
 
 from .common import *
 from . import word2vec
