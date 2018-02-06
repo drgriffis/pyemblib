@@ -32,6 +32,15 @@ class Embeddings(dict):
     def has(self, key):
         return not self.get(key, None) is None
 
+    def toarray(self):
+        '''Returns the embedding vocabulary in fixed order and
+        a NumPy array of the embeddings, in vocab order.
+        '''
+        vocab = tuple(self.keys())
+        embed_array = []
+        for v in vocab: embed_array.append(self[v])
+        return (vocab, np.array(embed_array))
+
 
 def read(fname, format=Format.Word2Vec, size_only=False, **kwargs):
     '''Returns array of words and word embedding matrix
@@ -118,12 +127,6 @@ def analogyQuery(embeds, a, b, c):
         - numpy.array(embeds[a])
         + numpy.array(embeds[c])
     )
-
-def splitVocabAndEmbeddings(embeds):
-    vocab = tuple(embeds.keys())
-    embed_array = []
-    for v in vocab: embed_array.append(embeds[v])
-    return (vocab, np.array(embed_array))
 
 
 class NearestNeighbors:
