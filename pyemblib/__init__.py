@@ -39,7 +39,7 @@ class Embeddings(dict):
         vocab = tuple(self.keys())
         embed_array = []
         for v in vocab: embed_array.append(self[v])
-        return (vocab, np.array(embed_array))
+        return (vocab, numpy.array(embed_array))
 
 
 def read(fname, format=Format.Word2Vec, size_only=False, **kwargs):
