@@ -4,14 +4,14 @@ import sys
 import numpy as np
 from .common import *
 
-def read(fname, mode=Mode.Binary, size_only=False):
+def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False):
     '''Returns array of words and word embedding matrix
     '''
-    if mode == Mode.Text: output = _readTxt(fname, size_only=size_only)
-    elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only)
+    if mode == Mode.Text: output = _readTxt(fname, size_only=size_only, first_n=first_n)
+    elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only, first_n=first_n, separator=separator, replace_errors=replace_errors)
     return output
 
-def _readTxt(fname, size_only=False):
+def _readTxt(fname, size_only=False, first_n=None):
     '''Returns array of words and word embedding matrix
     '''
     words, vectors = [], []
@@ -25,12 +25,18 @@ def _readTxt(fname, size_only=False):
     for line in hook:
         chunks = line.split()
         word, vector = chunks[0].strip(), np.array([float(n) for n in chunks[1:]])
+        assert len(vector) == dim
         words.append(word)
         vectors.append(vector)
+
+        if (not first_n is None) and len(words) == first_n:
+            break
     hook.close()
 
-    assert len(words) == numWords
-    for v in vectors: assert len(v) == dim
+    if not first_n is None:
+        assert len(words) == first_n
+    else:
+        assert len(words) == numWords
 
     return (words, vectors)
 
@@ -41,7 +47,7 @@ def _getFileSize(inf):
     inf.seek(curIx)
     return file_size
 
-def _readBin(fname, size_only=False):
+def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors=False):
     import sys
     words, vectors = [], []
 
@@ -60,15 +66,21 @@ def _readBin(fname, size_only=False):
     # make best guess about byte size of floats in file
     #float_size = 4
 
+    bsep = separator.encode('utf-8')
+
     chunksize = 10*float_size*1024
     curIx, nextChunk = inf.tell(), inf.read(chunksize)
     #while len(nextChunk) > 0 and len(words) < numWords:
     while len(nextChunk) > 0:
         inf.seek(curIx)
 
-        splitix = nextChunk.index(b' ')
+        splitix = nextChunk.index(bsep)
         #print('splitIx: %d   nextChunk: %s' % (splitix, nextChunk[:splitix]))
-        word = inf.read(splitix).decode('utf-8')
+        bts = inf.read(splitix)
+        if replace_errors:
+            word = bts.decode('utf-8', errors='replace')
+        else:
+            word = bts.decode('utf-8')
         #word = inf.read(splitix).decode('utf-8', errors='replace')
         #print('word: %s' % word)
         inf.seek(1,1) # skip the space
@@ -83,10 +95,16 @@ def _readBin(fname, size_only=False):
         #input()
         #sys.stdout.write('  >> Read %d words\r' % len(words))
 
+        if (not first_n is None) and len(words) == first_n:
+            break
+
     inf.close()
 
     # verify that we read properly
-    assert len(words) == numWords
+    if not first_n is None:
+        assert len(words) == first_n
+    else:
+        assert len(words) == numWords
     return (words, vectors)
 
 def write(embeds, fname, mode=Mode.Binary, verbose=False):
