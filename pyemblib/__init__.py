@@ -42,7 +42,7 @@ class Embeddings(dict):
         return (vocab, numpy.array(embed_array))
 
 
-def read(fname, format=Format.Word2Vec, size_only=False, **kwargs):
+def read(fname, format=Format.Word2Vec, size_only=False, lower_keys=False, **kwargs):
     '''Returns array of words and word embedding matrix
     '''
     if format == Format.Word2Vec:
@@ -57,7 +57,9 @@ def read(fname, format=Format.Word2Vec, size_only=False, **kwargs):
 
         wordmap = Embeddings()
         for i in range(len(words)):
-            wordmap[words[i]] = vectors[i]
+            if lower_keys: key = words[i].lower()
+            else: key = words[i]
+            wordmap[key] = vectors[i]
         return wordmap
     
 def load(*args, **kwargs):
