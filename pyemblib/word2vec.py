@@ -4,18 +4,24 @@ import sys
 import numpy as np
 from .common import *
 
-def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False):
+def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None):
     '''Returns array of words and word embedding matrix
     '''
-    if mode == Mode.Text: output = _readTxt(fname, size_only=size_only, first_n=first_n)
-    elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only, first_n=first_n, separator=separator, replace_errors=replace_errors)
+    if mode == Mode.Text: output = _readTxt(fname, size_only=size_only, first_n=first_n, filter_to=filter_to)
+    elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only, first_n=first_n, separator=separator, replace_errors=replace_errors, filter_to=filter_to)
     return output
 
-def _readTxt(fname, size_only=False, first_n=None):
+def _readTxt(fname, size_only=False, first_n=None, filter_to=None):
     '''Returns array of words and word embedding matrix
     '''
     words, vectors = [], []
     hook = codecs.open(fname, 'r', 'utf-8')
+
+    if filter_to:
+        filter_set = set([f.lower() for f in filter_to])
+        key_filter = lambda k: k.lower() in filter_set
+    else:
+        key_filter = lambda k: True
 
     # get summary info about vectors file
     (numWords, dim) = (int(s.strip()) for s in hook.readline().split())
@@ -25,9 +31,15 @@ def _readTxt(fname, size_only=False, first_n=None):
     for line in hook:
         chunks = line.split()
         word, vector = chunks[0].strip(), np.array([float(n) for n in chunks[1:]])
+        if len(vector) == dim - 1:
+            sys.stderr.write('[WARNING] Found a vector with no readable key, skipping\n')
+        elif len(vector) != dim:
+            raise ValueError("Found wrong number of dimensions! Got %d, expected %d" % (len(chunks), dim))
+            
         assert len(vector) == dim
-        words.append(word)
-        vectors.append(vector)
+        if key_filter(word):
+            words.append(word)
+            vectors.append(vector)
 
         if (not first_n is None) and len(words) == first_n:
             break
@@ -35,7 +47,7 @@ def _readTxt(fname, size_only=False, first_n=None):
 
     if not first_n is None:
         assert len(words) == first_n
-    else:
+    elif not filter_to:
         assert len(words) == numWords
 
     return (words, vectors)
@@ -47,9 +59,15 @@ def _getFileSize(inf):
     inf.seek(curIx)
     return file_size
 
-def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors=False):
+def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None):
     import sys
     words, vectors = [], []
+
+    if filter_to:
+        filter_set = set([f.lower() for f in filter_to])
+        key_filter = lambda k: k.lower() in filter_set
+    else:
+        key_filter = lambda k: True
 
     inf = open(fname, 'rb')
 
@@ -84,12 +102,13 @@ def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors
         #word = inf.read(splitix).decode('utf-8', errors='replace')
         #print('word: %s' % word)
         inf.seek(1,1) # skip the space
-        vector = array.array('f', inf.read(dim*float_size))
+        vector = np.array(array.array('f', inf.read(dim*float_size)))
         #print(vector)
         inf.seek(1,1) # skip the newline
 
-        words.append(word)
-        vectors.append(vector)
+        if key_filter(word):
+            words.append(word)
+            vectors.append(vector)
         curIx, nextChunk = inf.tell(), inf.read(chunksize)
         #print('curIx: %d' % curIx)
         #input()
@@ -103,7 +122,7 @@ def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors
     # verify that we read properly
     if not first_n is None:
         assert len(words) == first_n
-    else:
+    elif not filter_to:
         assert len(words) == numWords
     return (words, vectors)
 
