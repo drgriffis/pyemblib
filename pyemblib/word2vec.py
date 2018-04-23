@@ -29,26 +29,32 @@ def _readTxt(fname, size_only=False, first_n=None, filter_to=None):
         return (numWords, dim)
 
     for line in hook:
-        chunks = line.split()
-        word, vector = chunks[0].strip(), np.array([float(n) for n in chunks[1:]])
-        if len(vector) == dim - 1:
-            sys.stderr.write('[WARNING] Found a vector with no readable key, skipping\n')
-        elif len(vector) != dim:
-            raise ValueError("Found wrong number of dimensions! Got %d, expected %d" % (len(chunks), dim))
-            
-        assert len(vector) == dim
-        if key_filter(word):
-            words.append(word)
-            vectors.append(vector)
+        if len(line.strip()) > 0:
+            chunks = line.split()
+            try:
+                word, vector = chunks[0].strip(), np.array([float(n) for n in chunks[1:]])
+            except Exception as e:
+                print("<<< CHUNKING ERROR >>>")
+                print(line)
+                raise e
+            if len(vector) == dim - 1:
+                sys.stderr.write("[WARNING] Read vector without a key, skipping\n")
+            elif len(vector) != dim:
+                raise ValueError("Read %d-length vector, expected %d" % (len(vector), dim))
+            else:
+                if key_filter(word):
+                    words.append(word)
+                    vectors.append(vector)
 
-        if (not first_n is None) and len(words) == first_n:
-            break
+                if (not first_n is None) and len(words) == first_n:
+                    break
     hook.close()
 
     if not first_n is None:
         assert len(words) == first_n
     elif not filter_to:
-        assert len(words) == numWords
+        if len(words) != numWords:
+            sys.stderr.write("[WARNING] Expected %d words, read %d\n" % (numWords, len(words)))
 
     return (words, vectors)
 
@@ -149,24 +155,35 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
         sys.stdout.flush()
 
     # write vectors
-    i = 0
-    for word in keys:
-        write_str(word)
-        embedding = wordmap.get(word)
-        if mode == Mode.Binary:
+    ctr = {'count':0}
+    def tick(ctr):
+        ctr['count'] += 1
+        if ctr['count'] % 1000 == 0:
+            sys.stdout.write('\r >>> Written %d/%d words' % (ctr['count'], len(keys)))
+            if ctr['count'] % 5000 == 0:
+                sys.stdout.flush()
+
+    if mode == Mode.Binary:
+        test_emb = wordmap.get(keys[0])
+        if 'astype' in dir(test_emb): write_op = lambda e, o: e.astype('f').tofile(o)
+        else: write_op = lambda e, o: np.float32(e).tofile(o)
+
+        for word in keys:
+            write_str(word)
+            embedding = wordmap.get(word)
             outf.write(b' ')
-            # write as 4-byte float 32
-            if 'astype' in dir(embedding): embedding.astype('f').tofile(outf)
-            else: np.float32(embedding).tofile(outf)
-        elif mode == Mode.Text:
+            write_op(embedding, outf)
+            write_str('\n')
+            tick(ctr)
+    elif mode == Mode.Text:
+        for word in keys:
+            write_str(word)
+            embedding = wordmap.get(word)
             for f in embedding: write_str(' %.8f' % f)
-        write_str('\n')
-        if verbose: 
-            if i % 50 == 0: sys.stdout.write('\r >>> Written %d/%d words' % (i,len(keys)))
-            if i % 200 == 0: sys.stdout.flush()
-        i += 1
+            write_str('\n')
+            tick(ctr)
     outf.close()
 
     if verbose:
-        sys.stdout.write('\r >>> Written %d/%d words\n' % (i, len(keys)))
+        sys.stdout.write('\r >>> Written %d/%d words\n' % (ctr['count'], len(keys)))
         sys.stdout.flush()
