@@ -2,6 +2,7 @@ import codecs
 import array
 import sys
 import numpy as np
+import time
 from .common import *
 
 def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None):
@@ -138,17 +139,18 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
     '''
     if mode == Mode.Binary:
         outf = open(fname, 'wb')
-        write_str = lambda s: outf.write(s.encode('utf-8'))
     elif mode == Mode.Text:
         outf = codecs.open(fname, 'w', 'utf-8')
-        write_str = lambda s: outf.write(s)
 
     wordmap = embeds
 
     # write summary info
     keys = list(wordmap.keys())
     vdim = 0 if len(keys) == 0 else len(wordmap.get(keys[0]))
-    write_str('%d %d\n' % (len(keys), vdim))
+    if mode == Mode.Binary:
+        outf.write(('%d %d\n' % (len(keys), vdim)).encode('utf-8'))
+    else:
+        outf.write('%d %d\n' % (len(keys), vdim))
 
     if verbose:
         sys.stdout.write(' >>> Writing %d-d embeddings for %d words\n' % (vdim, len(keys)))
@@ -165,22 +167,20 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
 
     if mode == Mode.Binary:
         test_emb = wordmap.get(keys[0])
-        if 'astype' in dir(test_emb): write_op = lambda e, o: e.astype('f').tofile(o)
-        else: write_op = lambda e, o: np.float32(e).tofile(o)
+        if 'astype' in dir(test_emb): write_op = lambda e: e.astype('f').tostring()
+        else: write_op = lambda e: np.float32(e).tostring()
 
+        time_word, time_lookup, time_emb = 0, 0, 0
         for word in keys:
-            write_str(word)
             embedding = wordmap.get(word)
-            outf.write(b' ')
-            write_op(embedding, outf)
-            write_str('\n')
+            row = embedding.astype(np.float32)
+            outf.write(word.encode('utf-8') + b' ' + write_op(row) + b'\n')
             tick(ctr)
+
     elif mode == Mode.Text:
         for word in keys:
-            write_str(word)
             embedding = wordmap.get(word)
-            for f in embedding: write_str(' %.8f' % f)
-            write_str('\n')
+            outf.write('%s %s\n' % (word, ' '.join([repr(val) for val in embedding])))
             tick(ctr)
     outf.close()
 
