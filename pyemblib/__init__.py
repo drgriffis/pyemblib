@@ -32,11 +32,16 @@ class Embeddings(dict):
     def has(self, key):
         return not self.get(key, None) is None
 
-    def toarray(self):
+    def toarray(self, ordered=False):
         '''Returns the embedding vocabulary in fixed order and
         a NumPy array of the embeddings, in vocab order.
         '''
-        vocab = tuple(self.keys())
+        if ordered:
+            vocab = list(self.keys())
+            vocab.sort()
+            vocab = tuple(vocab)
+        else:
+            vocab = tuple(self.keys())
         embed_array = []
         for v in vocab: embed_array.append(self[v])
         return (vocab, numpy.array(embed_array))
