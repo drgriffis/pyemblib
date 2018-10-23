@@ -46,7 +46,7 @@ def read(fname, format=Format.Word2Vec, size_only=False, lower_keys=False, **kwa
     '''Returns array of words and word embedding matrix
     '''
     if format == Format.Word2Vec:
-        output = word2vec.read(fname, size_only=size_only, **kwargs)
+        output = word2vec.read(fname, size_only=size_only, lower_keys=lower_keys, **kwargs)
     elif format == Format.Glove:
         output = glove.read(fname, size_only=size_only, **kwargs)
 
