@@ -5,22 +5,29 @@ import numpy as np
 import time
 from .common import *
 
-def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None):
+def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None, lower_keys=False):
     '''Returns array of words and word embedding matrix
     '''
-    if mode == Mode.Text: output = _readTxt(fname, size_only=size_only, first_n=first_n, filter_to=filter_to)
-    elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only, first_n=first_n, separator=separator, replace_errors=replace_errors, filter_to=filter_to)
+    if mode == Mode.Text: output = _readTxt(fname, size_only=size_only,
+        first_n=first_n, filter_to=filter_to, lower_keys=lower_keys)
+    elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only,
+        first_n=first_n, separator=separator, replace_errors=replace_errors,
+        filter_to=filter_to, lower_keys=lower_keys)
     return output
 
-def _readTxt(fname, size_only=False, first_n=None, filter_to=None):
+def _readTxt(fname, size_only=False, first_n=None, filter_to=None, lower_keys=False):
     '''Returns array of words and word embedding matrix
     '''
     words, vectors = [], []
     hook = codecs.open(fname, 'r', 'utf-8')
 
     if filter_to:
-        filter_set = set([f.lower() for f in filter_to])
-        key_filter = lambda k: k.lower() in filter_set
+        if lower_keys:
+            filter_set = set([f.lower() for f in filter_to])
+            key_filter = lambda k: k.lower() in filter_set
+        else:
+            filter_set = set(filter_to)
+            key_filter = lambda k: k in filter_set
     else:
         key_filter = lambda k: True
 
@@ -66,13 +73,17 @@ def _getFileSize(inf):
     inf.seek(curIx)
     return file_size
 
-def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None):
+def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None, lower_keys=False):
     import sys
     words, vectors = [], []
 
     if filter_to:
-        filter_set = set([f.lower() for f in filter_to])
-        key_filter = lambda k: k.lower() in filter_set
+        if lower_keys:
+            filter_set = set([f.lower() for f in filter_to])
+            key_filter = lambda k: k.lower() in filter_set
+        else:
+            filter_set = set(filter_to)
+            key_filter = lambda k: k in filter_set
     else:
         key_filter = lambda k: True
 
