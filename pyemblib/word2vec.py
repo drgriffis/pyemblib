@@ -169,13 +169,17 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
 
     # write vectors
     ctr = {'count':0}
-    def tick(ctr, complete=False):
-        if not complete:
-            ctr['count'] += 1
-        if complete or ctr['count'] % 1000 == 0:
-            sys.stdout.write('\r >>> Written %d/%d words' % (ctr['count'], len(keys)))
-            if complete or (ctr['count'] % 5000 == 0):
-                sys.stdout.flush()
+    if verbose:
+        def tick(ctr, complete=False):
+            if not complete:
+                ctr['count'] += 1
+            if complete or ctr['count'] % 1000 == 0:
+                sys.stdout.write('\r >>> Written %d/%d words' % (ctr['count'], len(keys)))
+                if complete or (ctr['count'] % 5000 == 0):
+                    sys.stdout.flush()
+    else:
+        def tick(ctr, complete=False):
+            pass
 
     if mode == Mode.Binary:
         test_emb = wordmap.get(keys[0])
@@ -186,19 +190,15 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
         for word in keys:
             embedding = wordmap.get(word)
             outf.write(word.encode('utf-8') + b' ' + write_op(embedding) + b'\n')
-            tick(ctr)
+            tick(ctr, complete=False)
 
     elif mode == Mode.Text:
         for word in keys:
             embedding = wordmap.get(word)
             outf.write('%s %s\n' % (word, ' '.join([repr(val) for val in embedding])))
-            tick(ctr)
-
-    tick(ctr, complete=True)
-    sys.stdout.write('\n')
+            tick(ctr, complete=False)
 
     outf.close()
 
     if verbose:
-        sys.stdout.write('\r >>> Written %d/%d words\n' % (ctr['count'], len(keys)))
-        sys.stdout.flush()
+        tick(ctr, complete=True)
