@@ -169,11 +169,12 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
 
     # write vectors
     ctr = {'count':0}
-    def tick(ctr):
-        ctr['count'] += 1
-        if ctr['count'] % 1000 == 0:
+    def tick(ctr, complete=False):
+        if not complete:
+            ctr['count'] += 1
+        if complete or ctr['count'] % 1000 == 0:
             sys.stdout.write('\r >>> Written %d/%d words' % (ctr['count'], len(keys)))
-            if ctr['count'] % 5000 == 0:
+            if complete or (ctr['count'] % 5000 == 0):
                 sys.stdout.flush()
 
     if mode == Mode.Binary:
@@ -184,8 +185,7 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
         time_word, time_lookup, time_emb = 0, 0, 0
         for word in keys:
             embedding = wordmap.get(word)
-            row = embedding.astype(np.float32)
-            outf.write(word.encode('utf-8') + b' ' + write_op(row) + b'\n')
+            outf.write(word.encode('utf-8') + b' ' + write_op(embedding) + b'\n')
             tick(ctr)
 
     elif mode == Mode.Text:
@@ -193,6 +193,10 @@ def write(embeds, fname, mode=Mode.Binary, verbose=False):
             embedding = wordmap.get(word)
             outf.write('%s %s\n' % (word, ' '.join([repr(val) for val in embedding])))
             tick(ctr)
+
+    tick(ctr, complete=True)
+    sys.stdout.write('\n')
+
     outf.close()
 
     if verbose:
