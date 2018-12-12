@@ -141,7 +141,8 @@ def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors
     if not first_n is None:
         assert len(words) == first_n
     elif not filter_to:
-        assert len(words) == numWords
+        if len(words) != numWords:
+            sys.stderr.write("[WARNING] Expected %d words, read %d\n" % (numWords, len(words)))
     return (words, vectors)
 
 def write(embeds, fname, mode=Mode.Binary, verbose=False):
