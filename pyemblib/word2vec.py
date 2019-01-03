@@ -5,21 +5,43 @@ import numpy as np
 import time
 from .common import *
 
-def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None, lower_keys=False, errors='strict'):
+def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ',
+        replace_errors=False, filter_to=None, lower_keys=False, errors='strict',
+        skip_parsing_errors=False):
     '''Returns array of words and word embedding matrix
+
+    Parameters
+       fname               :: name of embedding file to read
+       mode                :: pyemblib.Mode indicator (text or binary format)
+       size_only           :: if True, only reads the size of the embeddings and stops
+       first_n             :: only read the first n embeddings
+       separator           :: character separating the key from the embedding vector
+       filter_to           :: only return embeddings whose keys are in this list
+       lower_keys          :: lowercase all keys before returning
+       errors              :: flag passed to UTF-8 decoding
+       skip_parsing_errors :: if True, prints a warning message when a line fails
+                              to parse, but continues reading; default behavior
+                              aborts on parsing error
+
+    DEPRECATED PARAMETERS
+       replace_errors :: if True, uses utf-8 decoding flag "replace"
     '''
     if mode == Mode.Text: output = _readTxt(fname, size_only=size_only,
-        first_n=first_n, filter_to=filter_to, lower_keys=lower_keys, errors=errors)
+        first_n=first_n, filter_to=filter_to, lower_keys=lower_keys, errors=errors,
+        separator=separator, skip_parsing_errors=skip_parsing_errors)
     elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only,
         first_n=first_n, separator=separator, replace_errors=replace_errors,
         filter_to=filter_to, lower_keys=lower_keys, errors=errors)
     return output
 
-def _readTxt(fname, size_only=False, first_n=None, filter_to=None, lower_keys=False, errors='strict'):
+def _readTxt(fname, size_only=False, first_n=None, filter_to=None, lower_keys=False,
+        errors='strict', separator=' ', skip_parsing_errors=False):
     '''Returns array of words and word embedding matrix
     '''
     words, vectors = [], []
-    hook = codecs.open(fname, 'r', 'utf-8', errors=errors)
+    hook = open(fname, 'rb')
+
+    bsep = bytes(separator, 'utf-8')[0]
 
     if filter_to:
         if lower_keys:
@@ -32,30 +54,46 @@ def _readTxt(fname, size_only=False, first_n=None, filter_to=None, lower_keys=Fa
         key_filter = lambda k: True
 
     # get summary info about vectors file
-    (numWords, dim) = (int(s.strip()) for s in hook.readline().split())
+    (numWords, dim) = (int(s.strip()) for s in hook.readline().decode('utf-8', errors=errors).split())
     if size_only:
         return (numWords, dim)
 
+    line_ix = 0
     for line in hook:
+        line_ix += 1
         if len(line.strip()) > 0:
-            chunks = line.split()
             try:
-                word, vector = chunks[0].strip(), np.array([float(n) for n in chunks[1:]])
+                ix = 0
+                while line[ix] != bsep:
+                    ix += 1
+                key = line[:ix].decode('utf-8', errors=errors)
+                vector = line[ix+1:].decode('utf-8', errors=errors)
+                vector = np.array([float(n) for n in vector.split()])
             except Exception as e:
-                print("<<< CHUNKING ERROR >>>")
-                print(line)
-                raise e
-            if len(vector) == dim - 1:
-                sys.stderr.write("[WARNING] Read vector without a key, skipping\n")
+                if skip_parsing_errors:
+                    sys.stderr.write('[WARNING] Line %d: Parsing error -- %s\n' % (line_ix, str(e)))
+                    line_ix += 1
+                    continue
+                else:
+                    print("<<< CHUNKING ERROR >>>")
+                    print(line)
+                    raise e
+
+            #chunks = line.split()
+            #try:
+            #    key, vector = chunks[0].strip(), np.array([float(n) for n in chunks[1:]])
+            if len(vector) == dim - 1 or len(key) == 0:
+                sys.stderr.write("[WARNING] Line %d: Read vector without a key, skipping\n" % line_ix)
             elif len(vector) != dim:
                 raise ValueError("Read %d-length vector, expected %d" % (len(vector), dim))
             else:
-                if key_filter(word):
-                    words.append(word)
+                if key_filter(key):
+                    words.append(key)
                     vectors.append(vector)
 
                 if (not first_n is None) and len(words) == first_n:
                     break
+            line_ix += 1
     hook.close()
 
     if not first_n is None:

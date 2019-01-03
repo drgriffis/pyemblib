@@ -48,7 +48,23 @@ class Embeddings(dict):
 
 
 def read(fname, format=Format.Word2Vec, size_only=False, lower_keys=False, **kwargs):
-    '''Returns array of words and word embedding matrix
+    '''Returns Embeddings instance mapping words/keys to embedding vectors
+
+    Parameters
+       fname               :: name of embedding file to read
+       mode                :: pyemblib.Mode indicator (text or binary format)
+       size_only           :: if True, only reads the size of the embeddings and stops
+       first_n             :: only read the first n embeddings
+       separator           :: character separating the key from the embedding vector
+       filter_to           :: only return embeddings whose keys are in this list
+       lower_keys          :: lowercase all keys before returning
+       errors              :: flag passed to UTF-8 decoding
+       skip_parsing_errors :: if True, prints a warning message when a line fails
+                              to parse, but continues reading; default behavior
+                              aborts on parsing error
+
+    DEPRECATED PARAMETERS
+       replace_errors :: if True, uses utf-8 decoding flag "replace"
     '''
     if format == Format.Word2Vec:
         output = word2vec.read(fname, size_only=size_only, lower_keys=lower_keys, **kwargs)
