@@ -5,21 +5,21 @@ import numpy as np
 import time
 from .common import *
 
-def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None, lower_keys=False):
+def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None, lower_keys=False, errors='strict'):
     '''Returns array of words and word embedding matrix
     '''
     if mode == Mode.Text: output = _readTxt(fname, size_only=size_only,
-        first_n=first_n, filter_to=filter_to, lower_keys=lower_keys)
+        first_n=first_n, filter_to=filter_to, lower_keys=lower_keys, errors=errors)
     elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only,
         first_n=first_n, separator=separator, replace_errors=replace_errors,
-        filter_to=filter_to, lower_keys=lower_keys)
+        filter_to=filter_to, lower_keys=lower_keys, errors=errors)
     return output
 
-def _readTxt(fname, size_only=False, first_n=None, filter_to=None, lower_keys=False):
+def _readTxt(fname, size_only=False, first_n=None, filter_to=None, lower_keys=False, errors='strict'):
     '''Returns array of words and word embedding matrix
     '''
     words, vectors = [], []
-    hook = codecs.open(fname, 'r', 'utf-8')
+    hook = codecs.open(fname, 'r', 'utf-8', errors=errors)
 
     if filter_to:
         if lower_keys:
@@ -73,7 +73,7 @@ def _getFileSize(inf):
     inf.seek(curIx)
     return file_size
 
-def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None, lower_keys=False):
+def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors=False, filter_to=None, lower_keys=False, errors='strict'):
     import sys
     words, vectors = [], []
 
@@ -90,7 +90,7 @@ def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors
     inf = open(fname, 'rb')
 
     # get summary info about vectors file
-    summary = inf.readline().decode('utf-8')
+    summary = inf.readline().decode('utf-8', errors=errors)
     summary_chunks = [int(s.strip()) for s in summary.split(' ')]
     (numWords, dim) = summary_chunks[:2]
     if len(summary_chunks) > 2: float_size = 8
@@ -116,7 +116,7 @@ def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors
         if replace_errors:
             word = bts.decode('utf-8', errors='replace')
         else:
-            word = bts.decode('utf-8')
+            word = bts.decode('utf-8', errors=errors)
         #word = inf.read(splitix).decode('utf-8', errors='replace')
         #print('word: %s' % word)
         inf.seek(1,1) # skip the space
