@@ -137,38 +137,26 @@ def _readBin(fname, size_only=False, first_n=None, separator=' ', replace_errors
     if size_only:
         return (numWords, dim)
 
-    # make best guess about byte size of floats in file
-    #float_size = 4
-
     bsep = separator.encode('utf-8')
 
-    chunksize = 10*float_size*1024
-    curIx, nextChunk = inf.tell(), inf.read(chunksize)
-    #while len(nextChunk) > 0 and len(words) < numWords:
-    while len(nextChunk) > 0:
-        inf.seek(curIx)
+    for _ in range(numWords):
+        word = []
+        while True:
+            next_ch = inf.read(1)
+            if next_ch == b' ':
+                break
+            elif next_ch != b'\n':  # some files have \n separator and some do not
+                word.append(next_ch)
 
-        splitix = nextChunk.index(bsep)
-        #print('splitIx: %d   nextChunk: %s' % (splitix, nextChunk[:splitix]))
-        bts = inf.read(splitix)
         if replace_errors:
-            word = bts.decode('utf-8', errors='replace')
+            word = b''.join(word).decode('utf-8', errors='replace')
         else:
-            word = bts.decode('utf-8', errors=errors)
-        #word = inf.read(splitix).decode('utf-8', errors='replace')
-        #print('word: %s' % word)
-        inf.seek(1,1) # skip the space
+            word = b''.join(word).decode('utf-8', errors=errors)
         vector = np.array(array.array('f', inf.read(dim*float_size)))
-        #print(vector)
-        inf.seek(1,1) # skip the newline
 
         if key_filter(word):
             words.append(word)
             vectors.append(vector)
-        curIx, nextChunk = inf.tell(), inf.read(chunksize)
-        #print('curIx: %d' % curIx)
-        #input()
-        #sys.stdout.write('  >> Read %d words\r' % len(words))
 
         if (not first_n is None) and len(words) == first_n:
             break
