@@ -39,3 +39,10 @@ class CLI_Formats:
             format = None
             mode = None
         return (format, mode)
+
+def addCLIReplaceErrors(parser):
+    parser.add_option('--replace-errors', dest='replace_errors',
+        action='store_true', default=False,
+        help='replace Unicode decoding errors in reading input embeddings')
+def parseCLIReplaceErrors(options):
+    return 'replace' if options.replace_errors else 'strict'
