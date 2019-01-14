@@ -46,3 +46,8 @@ def addCLIReplaceErrors(parser):
         help='replace Unicode decoding errors in reading input embeddings')
 def parseCLIReplaceErrors(options):
     return 'replace' if options.replace_errors else 'strict'
+
+def addCLISkipParsingErrors(parser):
+    parser.add_option('--skip-parsing-errors', dest='skip_parsing_errors',
+        action='store_true', default=False,
+        help='skip lines that trigger parsing errors in embedding reading')

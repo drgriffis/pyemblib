@@ -19,6 +19,7 @@ if __name__ == '__main__':
             type='choice', choices=list(CLI_Formats.options()), default=CLI_Formats.default(),
             help='desired output format of OUTPUTF')
         addCLIReplaceErrors(parser)
+        addCLISkipParsingErrors(parser)
         (options, args) = parser.parse_args()
         if len(args) != 2:
             parser.print_help()
@@ -30,6 +31,7 @@ if __name__ == '__main__':
     print('  Input %s format file: %s' % (from_format, srcf))
     print('  Output %s format file: %s' % (to_format, destf))
     print('  Replacing Unicode decode errors: %s' % str(options.replace_errors))
+    print('  Skipping parsing errors: %s' % str(options.skip_parsing_errors))
 
     from_fmt, from_mode = CLI_Formats.parse(from_format)
     to_fmt, to_mode = CLI_Formats.parse(to_format)
@@ -37,7 +39,7 @@ if __name__ == '__main__':
     errors = parseCLIReplaceErrors(options)
 
     print('\nReading %s input...' % from_format)
-    embeddings = read(srcf, format=from_fmt, mode=from_mode, errors=errors)
+    embeddings = read(srcf, format=from_fmt, mode=from_mode, errors=errors, skip_parsing_errors=options.skip_parsing_errors)
 
     print('Writing %s output...' % to_format)
     if to_fmt == Format.Word2Vec:
