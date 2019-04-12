@@ -4,10 +4,10 @@ A module for reading, writing, and using trained word embeddings.
 
 ## Installation
 
-Install as a module in your Python path.  For example, if you clone the repository to `~/Software/pyemblib`, add the following to your `.bashrc`:
+Install with pip!
 
 ```bash
-export PYTHONPATH=${HOME}/Software/pyemblib:${PYTHONPATH}
+pip install pyemblib
 ```
 
 ## Usage
