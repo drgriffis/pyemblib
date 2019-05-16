@@ -1,14 +1,12 @@
 import setuptools
+import pyemblib
 
 with open('README.md', 'r') as f:
     long_description = f.read()
 
-with open('VERSION', 'r') as f:
-    version = f.read().strip()
-
 setuptools.setup(
-    name='pyemblib',
-    version=version,
+    name=pyemblib.name,
+    version=pyemblib.version,
     author='Denis Newman-Griffis',
     author_email='denis.newman.griffis@gmail.com',
     description='Lightweight package for reading/writing pre-trained word embedding files',

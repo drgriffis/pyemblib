@@ -27,19 +27,23 @@ def read(fname, mode=Mode.Binary, size_only=False, first_n=None, separator=' ',
        replace_errors :: if True, uses utf-8 decoding flag "replace"
     '''
     if mode == Mode.Text: output = _readTxt(fname, size_only=size_only,
-        first_n=first_n, filter_to=filter_to, lower_keys=lower_keys, errors=errors,
-        separator=separator, skip_parsing_errors=skip_parsing_errors)
+        first_n=first_n, filter_to=filter_to, lower_keys=lower_keys,
+        replace_errors=replace_errors, errors=errors, separator=separator,
+        skip_parsing_errors=skip_parsing_errors)
     elif mode == Mode.Binary: output = _readBin(fname, size_only=size_only,
         first_n=first_n, separator=separator, replace_errors=replace_errors,
         filter_to=filter_to, lower_keys=lower_keys, errors=errors)
     return output
 
 def _readTxt(fname, size_only=False, first_n=None, filter_to=None, lower_keys=False,
-        errors='strict', separator=' ', skip_parsing_errors=False):
+        replace_errors=False, errors='strict', separator=' ', skip_parsing_errors=False):
     '''Returns array of words and word embedding matrix
     '''
     words, vectors = [], []
     hook = open(fname, 'rb')
+
+    if replace_errors:
+        errors = 'replace'
 
     bsep = bytes(separator, 'utf-8')[0]
 

@@ -10,6 +10,9 @@ from . import word2vec
 from . import glove
 from .glove import GloveMode
 
+name = 'pyemblib'
+version = '0.1.2'
+
 
 class Embeddings(dict):
     '''Wrapper for word embeddings; inherits from Dictionary.
